@@ -44,17 +44,17 @@ func newHangoutsNotifier(c *cobra.Command, acceptedLogLevels []log.Level) t.Noti
 	return n
 }
 
-func (e *emailTypeNotifier) d(entries []*log.Entry) String {
+func (e *hangoutsTypeNotifier) d(entries []*log.Entry) []byte {
 	message := ""
 	for _, entry := range entries {
 		message += entry.Time.Format("2006-01-02 15:04:05") + " (" + entry.Level.String() + "): " + entry.Message + "\r\n"
 		// We don't use fields in watchtower, so don't bother sending them.
 	}
 
-	return message
+	return []byte(message)
 }
 
-func (e *emailTypeNotifier) sendEntries(entries []*log.Entry) {
+func (e *hangoutsTypeNotifier) sendEntries(entries []*log.Entry) {
 	// Do the sending in a separate goroutine so we don't block the main process.
 	msg := e.buildMessage(entries)
 
@@ -84,18 +84,18 @@ func (e *emailTypeNotifier) sendEntries(entries []*log.Entry) {
 
 
 func (n *hangoutsTypeNotifier) StartNotification() {
-	if e.entries == nil {
-		e.entries = make([]*log.Entry, 0, 10)
+	if n.entries == nil {
+		n.entries = make([]*log.Entry, 0, 10)
 	}
 }
 
 func (n *hangoutsTypeNotifier) SendNotification() {
- 	if e.entries == nil || len(e.entries) <= 0 {
+ 	if n.entries == nil || len(n.entries) <= 0 {
 		return
 	}
 
-	e.sendEntries(e.entries)	
-	e.entries = nil
+	n.sendEntries(n.entries)	
+	n.entries = nil
 }
 
 func (n *hangoutsTypeNotifier) Levels() []log.Level {
