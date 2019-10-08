@@ -44,7 +44,7 @@ func newHangoutsNotifier(c *cobra.Command, acceptedLogLevels []log.Level) t.Noti
 	return n
 }
 
-func (e *hangoutsTypeNotifier) d(entries []*log.Entry) []byte {
+func (e *hangoutsTypeNotifier) buildMessage(entries []*log.Entry) []byte {
 	message := ""
 	for _, entry := range entries {
 		message += entry.Time.Format("2006-01-02 15:04:05") + " (" + entry.Level.String() + "): " + entry.Message + "\r\n"
@@ -54,9 +54,9 @@ func (e *hangoutsTypeNotifier) d(entries []*log.Entry) []byte {
 	return []byte(message)
 }
 
-func (e *hangoutsTypeNotifier) sendEntries(entries []*log.Entry) {
+func (n *hangoutsTypeNotifier) sendEntries(entries []*log.Entry) {
 	// Do the sending in a separate goroutine so we don't block the main process.
-	msg := e.buildMessage(entries)
+	msg := n.buildMessage(entries)
 
 	go func() {
 		jsonBody, err := json.Marshal(hangoutsMessage{
@@ -79,7 +79,6 @@ func (e *hangoutsTypeNotifier) sendEntries(entries []*log.Entry) {
 		}
 
 	}()
-	return nil
 }
 
 
@@ -107,11 +106,11 @@ func (n *hangoutsTypeNotifier) getURL() string {
 }
 
 func (n *hangoutsTypeNotifier) Fire(entry *log.Entry) error {
-	if e.entries != nil {
-		e.entries = append(e.entries, entry)
+	if n.entries != nil {
+		n.entries = append(n.entries, entry)
 	} else {
 		// Log output generated outside a cycle is sent immediately.
-		e.sendEntries([]*log.Entry{entry})
+		n.sendEntries([]*log.Entry{entry})
 	}
 	return nil
 }
