@@ -17,7 +17,8 @@ const (
 )
 
 type hangoutsTypeNotifier struct {
-	hangoutsURL      string
+	hangoutsURL    string
+	entries        []*log.Entry
 	logLevels      []log.Level
 }
 
@@ -43,23 +44,23 @@ func newHangoutsNotifier(c *cobra.Command, acceptedLogLevels []log.Level) t.Noti
 	return n
 }
 
-func (n *hangoutsTypeNotifier) StartNotification() {}
+func (e *emailTypeNotifier) d(entries []*log.Entry) String {
+	message := ""
+	for _, entry := range entries {
+		message += entry.Time.Format("2006-01-02 15:04:05") + " (" + entry.Level.String() + "): " + entry.Message + "\r\n"
+		// We don't use fields in watchtower, so don't bother sending them.
+	}
 
-func (n *hangoutsTypeNotifier) SendNotification() {}
-
-func (n *hangoutsTypeNotifier) Levels() []log.Level {
-	return n.logLevels
+	return message
 }
 
-func (n *hangoutsTypeNotifier) getURL() string {
-	return n.hangoutsURL
-}
-
-func (n *hangoutsTypeNotifier) Fire(entry *log.Entry) error {
+func (e *emailTypeNotifier) sendEntries(entries []*log.Entry) {
+	// Do the sending in a separate goroutine so we don't block the main process.
+	msg := e.buildMessage(entries)
 
 	go func() {
 		jsonBody, err := json.Marshal(hangoutsMessage{
-			Text:  "(" + entry.Level.String() + "): " + entry.Message,
+			Text:  "(" + entry.Level.String() + "): " + msg,
 		})
 		if err != nil {
 			fmt.Println("Failed to create JSON body for Hangouts notification: ", err)
@@ -78,6 +79,40 @@ func (n *hangoutsTypeNotifier) Fire(entry *log.Entry) error {
 		}
 
 	}()
+	return nil
+}
+
+
+func (n *hangoutsTypeNotifier) StartNotification() {
+	if e.entries == nil {
+		e.entries = make([]*log.Entry, 0, 10)
+	}
+}
+
+func (n *hangoutsTypeNotifier) SendNotification() {
+ 	if e.entries == nil || len(e.entries) <= 0 {
+		return
+	}
+
+	e.sendEntries(e.entries)	
+	e.entries = nil
+}
+
+func (n *hangoutsTypeNotifier) Levels() []log.Level {
+	return n.logLevels
+}
+
+func (n *hangoutsTypeNotifier) getURL() string {
+	return n.hangoutsURL
+}
+
+func (n *hangoutsTypeNotifier) Fire(entry *log.Entry) error {
+	if e.entries != nil {
+		e.entries = append(e.entries, entry)
+	} else {
+		// Log output generated outside a cycle is sent immediately.
+		e.sendEntries([]*log.Entry{entry})
+	}
 	return nil
 }
 
