@@ -60,7 +60,7 @@ func (n *hangoutsTypeNotifier) sendEntries(entries []*log.Entry) {
 
 	go func() {
 		jsonBody, err := json.Marshal(hangoutsMessage{
-			Text:  "(" + entry.Level.String() + "): " + msg,
+			Text: msg,
 		})
 		if err != nil {
 			fmt.Println("Failed to create JSON body for Hangouts notification: ", err)
