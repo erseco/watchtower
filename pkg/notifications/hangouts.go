@@ -47,7 +47,8 @@ func newHangoutsNotifier(c *cobra.Command, acceptedLogLevels []log.Level) t.Noti
 func (e *hangoutsTypeNotifier) buildMessage(entries []*log.Entry) string {
 	message := ""
 	for _, entry := range entries {
-		message += entry.Time.Format("2006-01-02 15:04:05") + " (" + entry.Level.String() + "): " + entry.Message + "\r\n"
+		// message += "(" + entry.Level.String() + "): " + entry.Message + "\r\n"
+		message += entry.Message + "\r\n"
 		// We don't use fields in watchtower, so don't bother sending them.
 	}
 
